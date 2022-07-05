@@ -1,49 +1,42 @@
-A server app built using [Shelf](https://pub.dev/packages/shelf),
-configured to enable running with [Docker](https://www.docker.com/).
+# Dart VM Metrics Exporter
 
-This sample code handles HTTP GET requests to `/` and `/echo/<message>`
+Dart VMのメトリクスをprometheusなんかで取得するためのパッケージ
 
-# Running the sample
+## 利用方法
 
-## Running with the Dart SDK
+### 前提
 
-You can run the example with the [Dart SDK](https://dart.dev/get-dart)
-like this:
+[Dart VM Service](https://github.com/dart-lang/sdk/blob/main/runtime/vm/service/service.md)からメトリクスを取得します。
+Dartアプリケーションの実行時に`--observe`オプションを付けてDart VM Serviceを有効にする必要があります。
 
+また、`--disable-service-auth-codes`も付与しないと起動が難しいです。
+
+`--disable-service-auth-codes`を無効にした場合、Dart VM Serviceのポートが外部から不正にアクセスされないように、外部からトラフィックを受け入れない設定が必要です。
+
+起動コマンド例
 ```
-$ dart run bin/server.dart
-Server listening on port 8080
-```
-
-And then from a second terminal:
-```
-$ curl http://0.0.0.0:8080
-Hello, World!
-$ curl http://0.0.0.0:8080/echo/I_love_Dart
-I_love_Dart
+dart run --disable-service-auth-codes --observe=8181/0.0.0.0 YOUR_DART_APP
 ```
 
-## Running with Docker
+### agent
 
-If you have [Docker Desktop](https://www.docker.com/get-started) installed, you
-can build and run with the `docker` command:
+[agentディレクトリ](./agent/example)にあるdocker-compose.ymlを参考にします。
+agentのコンテナは環境変数*DDS_URI*で接続先を設定します。
+
+### library
+
+[bin/example_server.dart](bin/example_server.dart)を参考にします。
+
+## Run Example
 
 ```
-$ docker build . -t myserver
-$ docker run -it -p 8080:8080 myserver
-Server listening on port 8080
-```
-
-And then from a second terminal:
-```
-$ curl http://0.0.0.0:8080
-Hello, World!
-$ curl http://0.0.0.0:8080/echo/I_love_Dart
-I_love_Dart
+docker compose -f ./agent/example/docker-compose.yml up
 ```
 
-You should see the logging printed in the first terminal:
-```
-2021-05-06T15:47:04.620417  0:00:00.000158 GET     [200] /
-2021-05-06T15:47:08.392928  0:00:00.001216 GET     [200] /echo/I_love_Dart
-```
+[127.0.0.0:3000](http://127.0.0.1:3000)へアクセスするとGrafanaが見れます。
+データソースにprometheusを追加することでheap系のメトリクスが参照できます。
+初期ID/Passはadmin/adminです。
+
+## TODO
+
+- [] heap以外のメトリクスにも対応する
