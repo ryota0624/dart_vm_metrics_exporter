@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+    command: "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+    restart: always
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    restart: always
+  vm_metrics_agent:
+    build:
+      context: ../../
+      dockerfile: agent/Dockerfile
+    environment:
+      - "DDS_URI=ws://server:8181"
+    depends_on:
+      server:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+  server:
+    build:
+      context: ../../
+      dockerfile: agent/example/Dockerfile
+    command: "dart run --disable-service-auth-codes --observe=8181/0.0.0.0 ./agent/example/server.dart"
+    healthcheck:
+      interval: 10s
+      timeout: 1s
+      test: ["CMD", "curl", "http://localhost:8080/ok"]

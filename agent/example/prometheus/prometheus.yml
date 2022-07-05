@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'dart'
+    static_configs:
+      - targets:
+          - 'vm_metrics_agent:8080'
